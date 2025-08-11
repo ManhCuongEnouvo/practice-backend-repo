@@ -1,19 +1,18 @@
-// src/modules/booking/booking.controller.ts
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { BookingService } from '../service/booking.service';
-import { CreateBookingDto } from '../dto/booking.dto';
+import { Booking } from '../repository/booking.repository';
 
 @Controller('bookings')
 export class BookingController {
-  constructor(private readonly bookingService: BookingService) {}
-
-  @Post()
-  create(@Body() dto: CreateBookingDto) {
-    return this.bookingService.createBooking(dto);
-  }
+  constructor(private readonly bookingsService: BookingService) {}
 
   @Get()
-  findAll() {
-    return this.bookingService.getAllBookings();
+  getAll(): Booking[] {
+    return this.bookingsService.getAllBookings();
+  }
+
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number): Booking {
+    return this.bookingsService.getBookingById(id);
   }
 }

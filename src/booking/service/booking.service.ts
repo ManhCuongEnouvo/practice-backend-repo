@@ -1,31 +1,30 @@
-// src/modules/booking/booking.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { BookingRepository } from '../repository/booking.repository';
-import { CreateBookingDto } from '../dto/booking.dto';
-import { Booking } from '../entities/booking.entities';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { BookingRepository, Booking } from '../repository/booking.repository';
 
 @Injectable()
 export class BookingService {
-  constructor(private readonly bookingRepo: BookingRepository) {}
+  constructor(private readonly bookingsRepo: BookingRepository) {}
 
-  createBooking(dto: CreateBookingDto): Booking {
-    // 1. Check input
-    if (!dto.customerName || !dto.date || dto.seats < 1) {
-      throw new BadRequestException('Invalid booking data');
-    }
-
-    // 2. Xử lý logic
-    const booking: Omit<Booking, 'id'> = {
-      customerName: dto.customerName,
-      date: new Date(dto.date),
-      seats: dto.seats,
-    };
-
-    // 3. Return kết quả
-    return this.bookingRepo.create(booking);
+  // Query method: Get All booking
+  getAllBookings(): Booking[] {
+    // (2) Process
+    const bookings = this.bookingsRepo.findAll();
+    // (3) Return
+    return bookings;
   }
 
-  getAllBookings(): Booking[] {
-    return this.bookingRepo.findAll();
+  // Query method: get booking by id
+  getBookingById(id: number): Booking {
+    // (1) Check input
+    if (!id || isNaN(id)) {
+      throw new BadRequestException('Invalid booking ID');
+    }
+    // (2) Process
+    const booking = this.bookingsRepo.findById(id);
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${id} not found`);
+    }
+    // (3) Return
+    return booking;
   }
 }
