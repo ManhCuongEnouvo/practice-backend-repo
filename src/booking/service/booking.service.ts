@@ -1,30 +1,22 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { BookingRepository, Booking } from '../repository/booking.repository';
+import { BookingDto } from '../dto/booking.dto';
 
 @Injectable()
 export class BookingService {
-  constructor(private readonly bookingsRepo: BookingRepository) {}
+  constructor(private readonly bookingRepo: BookingRepository) {}
 
-  // Query method: Get All booking
-  getAllBookings(): Booking[] {
-    // (2) Process
-    const bookings = this.bookingsRepo.findAll();
-    // (3) Return
-    return bookings;
+  // Query: lấy tất cả booking
+  getAllBookings(): BookingDto[] {
+    return this.bookingRepo.findAll();
   }
 
-  // Query method: get booking by id
-  getBookingById(id: number): Booking {
-    // (1) Check input
-    if (!id || isNaN(id)) {
-      throw new BadRequestException('Invalid booking ID');
-    }
-    // (2) Process
-    const booking = this.bookingsRepo.findById(id);
+  // Query: lấy 1 booking theo id
+  getBookingById(id: number): BookingDto {
+    const booking = this.bookingRepo.findById(id);
     if (!booking) {
-      throw new NotFoundException(`Booking with id ${id} not found`);
+      throw new Error(`Booking with id ${id} not found`);
     }
-    // (3) Return
     return booking;
   }
 }

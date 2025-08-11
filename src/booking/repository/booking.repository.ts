@@ -1,5 +1,6 @@
 
 import { Injectable } from '@nestjs/common';
+import { BookingDto } from '../dto/booking.dto';
 
 export interface Booking {
   id: number;
@@ -10,19 +11,19 @@ export interface Booking {
 
 @Injectable()
 export class BookingRepository {
-  private bookings: Booking[] = [
-    { id: 1, customerName: 'John Doe', date: '2025-08-12', seatNumber: 'A1' },
-    { id: 2, customerName: 'Jane Smith', date: '2025-08-13', seatNumber: 'B2' },
+  private bookings: BookingDto[] = [
+    { id: 1, customerName: 'Alice', date: '2025-08-15', seatNumber: 'A1' },
+    { id: 2, customerName: 'Bob', date: '2025-08-16', seatNumber: 'B2' },
   ];
 
-  // Query method: only get data, no state change
-  findAll(): Booking[] {
-    return this.bookings;
+  // Query method: trả về danh sách booking
+  findAll(): BookingDto[] {
+    return [...this.bookings];
   }
 
-  // Query method: get 1 booking by id
-  findById(id: number): Booking | undefined {
-    return this.bookings.find((b) => b.id === id);
+  // Query method: trả về 1 booking theo id
+  findById(id: number): BookingDto | undefined {
+    return this.bookings.find(b => b.id === id);
   }
 }
 
