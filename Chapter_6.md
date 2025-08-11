@@ -69,3 +69,53 @@ try {
   }
 }
 ```
+
+#### 6.3. Avoid query methods that expose internal state
+- When you write OOP code, you should not create getter methods or query methods that return the internal state of an object in a way that the outside world can change or directly depend on.
+
+```TS
+class ShoppingCart {
+  private items: string[] = [];
+
+  getItems(): string[] {
+    // Trả về mảng thật → ai cũng có thể sửa nội bộ
+    return this.items;
+  }
+
+  addItem(item: string) {
+    this.items.push(item);
+  }
+}
+
+const cart = new ShoppingCart();
+cart.addItem("Apple");
+
+const externalItems = cart.getItems();
+externalItems.push("Banana"); // Sửa trực tiếp trạng thái nội bộ ❌
+console.log(cart.getItems()); // ["Apple", "Banana"] → object bị thay đổi ngoài ý muốn
+```
+
+```ts
+class ShoppingCart {
+  private items: string[] = [];
+
+  addItem(item: string) {
+    this.items.push(item);
+  }
+
+  getItems(): ReadonlyArray<string> {
+    // Trả về bản chỉ đọc
+    return this.items;
+  }
+
+  getTotalItems(): number {
+    return this.items.length;
+  }
+}
+
+const cart = new ShoppingCart();
+cart.addItem("Apple");
+
+const items = cart.getItems();
+// items.push("Banana"); ❌ Lỗi compile-time (readonly)
+console.log(items); // ["Apple"]

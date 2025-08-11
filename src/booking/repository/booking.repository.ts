@@ -16,14 +16,23 @@ export class BookingRepository {
     { id: 2, customerName: 'Bob', date: '2025-08-16', seatNumber: 'B2' },
   ];
 
-  // Query method: trả về danh sách booking
+  // Query method
   findAll(): BookingDto[] {
     return [...this.bookings];
   }
 
-  // Query method: trả về 1 booking theo id
+  // Query method
   findById(id: number): BookingDto | undefined {
     return this.bookings.find(b => b.id === id);
   }
+
+  // 6.3_Avoid query methods that expose internal state
+  async find(): Promise<any[]> {
+    return this.bookings.map(item => ({
+      ...item,
+    }));
+  }
 }
+
+
 

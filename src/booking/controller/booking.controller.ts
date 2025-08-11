@@ -16,4 +16,10 @@ export class BookingController {
   getById(@Param('id', ParseIntPipe) id: number): BookingDto {
     return this.bookingService.getBookingById(id);
   }
+
+//6.3_Avoid query methods that expose internal state
+  @Get()
+  async getBookings(): Promise<BookingDto[]> {
+  return this.bookingService.findAll();
+  }
 }

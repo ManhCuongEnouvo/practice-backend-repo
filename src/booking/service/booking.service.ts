@@ -19,4 +19,15 @@ export class BookingService {
     }
     return booking;
   }
+
+  // 6.3_Avoid query methods that expose internal state
+  async findAll(): Promise<BookingDto[]> {
+  const entities = await this.bookingRepo.find();
+  return entities.map(e => ({
+    id: e.id,
+    customerName: e.customerName,
+    date: e.date,
+    seatNumber: e.seatNumber,
+  }));
+}
 }
