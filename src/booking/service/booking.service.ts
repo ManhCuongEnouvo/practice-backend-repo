@@ -3,6 +3,7 @@ import { BookingRepository, Booking } from '../repository/booking.repository';
 import { BookingDto } from '../dto/booking.dto';
 import { BookingSummary } from '../dto/booking-summary.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BookingReportReadModel } from '../dto/booking-report.dto';
 
 @Injectable()
 export class BookingService {
@@ -105,4 +106,9 @@ export class BookingService {
     throw new Error('Failed to save booking: ' + error.message);
   }
 }
+
+    // QUERY: report by date
+  async getReportByDate(date: string): Promise<BookingReportReadModel> {
+    return this.bookingRepo.getReportByDate(date);
+  }
 }

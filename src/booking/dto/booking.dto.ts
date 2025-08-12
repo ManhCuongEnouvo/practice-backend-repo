@@ -3,4 +3,5 @@ export class BookingDto {
   customerName: string;
   date: string;
   seatNumber: string;
+  price?: number
 }

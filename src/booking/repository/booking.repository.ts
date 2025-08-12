@@ -1,6 +1,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { BookingDto } from '../dto/booking.dto';
+import { BookingReportReadModel } from '../dto/booking-report.dto';
 
 export interface Booking {
   id: number;
@@ -48,6 +49,18 @@ export class BookingRepository {
     this.bookings.push(booking);
     return booking;
   }
+
+ async getReportByDate(date: string): Promise<BookingReportReadModel> {
+  const filtered = this.bookings.filter(b => b.date === date);
+  const totalTicketsSold = filtered.length;
+  const totalRevenue = filtered.reduce((sum, b) => sum + (b.price ?? 0), 0);
+  return {
+    date,
+    totalTicketsSold,
+    totalRevenue,
+  };
+}
+
 }
 
 
