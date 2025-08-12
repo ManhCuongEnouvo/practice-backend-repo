@@ -2,10 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { BookingRepository, Booking } from '../repository/booking.repository';
 import { BookingDto } from '../dto/booking.dto';
 import { BookingSummary } from '../dto/booking-summary.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class BookingService {
-  constructor(private readonly bookingRepo: BookingRepository) {}
+  constructor(
+    private readonly bookingRepo: BookingRepository,
+    private readonly eventEmitter: EventEmitter2
+  ) {}
 
   // Query: lấy tất cả booking
   getAllBookings(): BookingDto[] {
@@ -57,9 +61,20 @@ export class BookingService {
     }));
   }
 
-   // ✅ Command method - thay đổi dữ liệu (xóa)
+   // ✅ Command method
   async deleteBooking(bookingId: number) {
     return this.bookingRepo.deleteById(bookingId);
   }
 
+  // 7.2_Limit the scope of a command method, and use events to perform secondary tasks
+ async deleteBookingEvent(bookingId: number): Promise<boolean> {
+    const deleted = this.bookingRepo.deleteById(bookingId);
+
+    if(!deleted) {
+      return false
+    }
+
+    this.eventEmitter.emit('booking.deleted', { bookingId });
+    return true
+  }
 }
