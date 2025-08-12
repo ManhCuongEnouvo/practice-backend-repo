@@ -77,4 +77,32 @@ export class BookingService {
     this.eventEmitter.emit('booking.deleted', { bookingId });
     return true
   }
+
+  // 7.4. When something goes wrong, throw an exception
+ async createBooking(customerName: string, date: string, seatNumber: string): Promise<Booking> {
+  if (!customerName || customerName.trim() === '') {
+    throw new BadRequestException('Customer name is required');
+  }
+
+  if (!date || isNaN(Date.parse(date))) {
+    throw new BadRequestException('Invalid date format');
+  }
+
+  if (!seatNumber || seatNumber.trim() === '') {
+    throw new BadRequestException('Seat number is required');
+  }
+
+  const booking: Booking = {
+    id: Date.now(), // mock ID
+    customerName: customerName.trim(),
+    date: date.trim(),
+    seatNumber: seatNumber.trim(),
+  };
+
+  try {
+    return await this.bookingRepo.save(booking);
+  } catch (error) {
+    throw new Error('Failed to save booking: ' + error.message);
+  }
+}
 }

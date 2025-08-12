@@ -164,3 +164,51 @@ const recipients = new Recipients([
 const mailer2 = new StatelessMailer();
 mailer2.sendConfirmationEmails(recipients.deduplicated());
 ```
+#### 7.4. When something goes wrong, throw an exception
+- This rule applies to both fetching data and performing operations.
+- When there is an error, do not return a special value (eg: null, false) to report the error → throw an exception.
+You can use:
+- InvalidArgumentException or LogicException for input condition errors (precondition check).
+- RuntimeException for errors that cannot be known before running.
+```TS
+/// bad code
+function withdraw(amount: number, balance: number): boolean {
+  if (amount > balance) {
+    return false; // báo lỗi bằng giá trị đặc biệt
+  }
+  console.log(`Rút ${amount} thành công`);
+  return true;
+}
+
+const result = withdraw(200, 100);
+if (!result) {
+  console.error("Không đủ tiền!");
+}
+```
+
+```TS
+class InsufficientFundsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InsufficientFundsError";
+  }
+}
+
+function withdraw(amount: number, balance: number): void {
+  if (amount > balance) {
+    throw new InsufficientFundsError("Số dư không đủ để rút");
+  }
+  console.log(`Rút ${amount} thành công`);
+}
+
+// Sử dụng
+try {
+  withdraw(200, 100);
+} catch (error) {
+  if (error instanceof InsufficientFundsError) {
+    console.error("Lỗi: " + error.message);
+  } else {
+    throw error; // ném tiếp nếu không phải lỗi dự kiến
+  }
+}
+```

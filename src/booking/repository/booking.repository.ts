@@ -43,6 +43,11 @@ export class BookingRepository {
     const idx = this.bookings.findIndex(b => b.id === id);
     if (idx !== -1) this.bookings.splice(idx, 1);
   }
+
+  async save(booking: Booking): Promise<Booking> {
+    this.bookings.push(booking);
+    return booking;
+  }
 }
 
 
