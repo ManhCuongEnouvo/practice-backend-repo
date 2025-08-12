@@ -46,4 +46,20 @@ export class BookingService {
       seatNumber: e.seatNumber,
     }));
   }
+
+  // Query method
+  async getBookingsForUserQuery(userId: number) {
+    // ✅ Call (findByUserId), Not call delete/update
+    const entities = await this.bookingRepo.findByUserId(userId);
+    return entities.map(e => ({
+      date: e.date,
+      seatNumber: e.seatNumber,
+    }));
+  }
+
+   // ✅ Command method - thay đổi dữ liệu (xóa)
+  async deleteBooking(bookingId: number) {
+    return this.bookingRepo.deleteById(bookingId);
+  }
+
 }

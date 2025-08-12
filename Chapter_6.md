@@ -262,3 +262,54 @@ class UserQueryStub implements UserQuery {
   console.log(await service.isAdult("123")); // true
 })();
 ```
+
+#### 6.7. Query methods should use other query methods, not command methods
+When you write a query method (a method that only retrieves data, does not change the system state), inside it you should only call other query methods, not command methods (methods that change state or have side-effects).
+1. Why is this principle there?
+- Ensure the CQRS (Command Query Responsibility Segregation) principle:
+- Command = change state
+- Query = read data only
+- If a query calls a command, you have accidentally created a side effect in an operation that is supposed to be read-only → difficult to debug, difficult to test.
+- Avoid unwanted errors: When the code is only to read data but changes state, you can cause bugs or make the data out of sync.
+- Keep the code understandable: When someone reads the query method, they can rest assured that no data has been changed.
+```TS
+class UserService {
+  private users = new Map<number, string>();
+
+  // Command method: thay đổi dữ liệu
+  addUser(id: number, name: string) {
+    this.users.set(id, name);
+  }
+
+  // Query method: nhưng lại gọi command bên trong → sai
+  getUserOrCreate(id: number, defaultName: string) {
+    if (!this.users.has(id)) {
+      this.addUser(id, defaultName); // ❌ thay đổi dữ liệu trong query
+    }
+    return this.users.get(id);
+  }
+}
+
+```
+
+```ts
+class UserService {
+  private users = new Map<number, string>();
+
+  // Command method
+  addUser(id: number, name: string) {
+    this.users.set(id, name);
+  }
+
+  // Query method
+  getUser(id: number): string | undefined {
+    return this.users.get(id);
+  }
+
+  // Tách riêng logic
+  userExists(id: number): boolean {
+    return this.users.has(id);
+  }
+}
+```
+![alt text](image_6_7.png)

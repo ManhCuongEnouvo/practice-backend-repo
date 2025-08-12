@@ -37,6 +37,12 @@ export class BookingRepository {
   async findByUserId(userId: number) {
     return this.bookings.filter(b => b.id === userId);
   }
+
+  // Command method — change data
+  async deleteById(id: number) {
+    const idx = this.bookings.findIndex(b => b.id === id);
+    if (idx !== -1) this.bookings.splice(idx, 1);
+  }
 }
 
 
