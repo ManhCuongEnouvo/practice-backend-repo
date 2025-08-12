@@ -167,3 +167,98 @@ console.log(account.getBalance()); // 1000
 - When you don't want client code to depend on internal data structures.
 - When you want to optimize the ability to change without breaking external code.
 - When you want a clearer class API: return only what is needed.
+
+#### 6.5. Define an abstraction for queries that cross system boundaries
+Define an abstraction for queries that cross system boundaries" means:
+- When you need to get data from another system (API, database, external service, etc.), you should not let the code in the application call directly to that system but define an abstraction (class or interface) as an intermediary.
+This helps:
+- Easier to replace or change the data source (switch from MySQL to PostgreSQL, from REST API to gRPC...).
+- Easier to test (mock/stub interface instead of having to connect for real).
+- Hide implementation details (client doesn't know how the API calls, only knows the result).
+- Reduce direct dependency on external libraries or SDKs.
+```TS
+// Abstraction
+interface UserQueryService {
+  getUserById(id: string): Promise<User>;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+class ApiUserQueryService implements UserQueryService {
+  constructor(private apiBaseUrl: string) {}
+
+  async getUserById(id: string): Promise<User> {
+    const response = await fetch(`${this.apiBaseUrl}/users/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user with id ${id}`);
+    }
+    return response.json();
+  }
+}
+
+class FakeUserQueryService implements UserQueryService {
+  async getUserById(id: string): Promise<User> {
+    return { id, name: "Test User", email: "test@example.com" };
+  }
+}
+
+async function showUserProfile(userQuery: UserQueryService, id: string) {
+  const user = await userQuery.getUserById(id);
+  console.log(`Name: ${user.name}, Email: ${user.email}`);
+}
+
+// Production
+const prodService = new ApiUserQueryService("https://api.example.com");
+showUserProfile(prodService, "123");
+
+// Test
+const testService = new FakeUserQueryService();
+showUserProfile(testService, "123");
+
+#### 6.6. Use stubs for test doubles with query methods
+- "Use stubs for test doubles with query methods" means that when you write a unit test for a class or module, if that class calls a query method to an external component (database, API, file system, ...) then you should not use the real component but create a stub (test double) instead.
+- Stub here is a mock version of the interface or class that you are querying, but it returns pre-programmed fixed data, instead of actually querying external data.
+Why should you use Stub for query methods?
+- Speed - No need to call real DB or API → test runs faster.
+- Stability - Not dependent on external data status → test results are always consistent.
+- Test isolation - Test the logic of the code without being affected by errors or changes from the external system.
+- Easy control of returned data – You can freely create data scenarios to test special situations.
+
+```TS
+interface UserQuery {
+  getUserById(id: string): Promise<User>;
+}
+
+type User = {
+  id: string;
+  name: string;
+  age: number;
+};
+
+class UserService {
+  constructor(private userQuery: UserQuery) {}
+
+  async isAdult(userId: string): Promise<boolean> {
+    const user = await this.userQuery.getUserById(userId);
+    return user.age >= 18;
+  }
+}
+
+class UserQueryStub implements UserQuery {
+  async getUserById(id: string): Promise<User> {
+    // Trả về dữ liệu cố định phục vụ test
+    return { id, name: "Test User", age: 20 };
+  }
+}
+
+(async () => {
+  const userQueryStub = new UserQueryStub();
+  const service = new UserService(userQueryStub);
+
+  console.log(await service.isAdult("123")); // true
+})();
+```
