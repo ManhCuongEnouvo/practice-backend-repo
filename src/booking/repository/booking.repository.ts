@@ -32,6 +32,11 @@ export class BookingRepository {
       ...item,
     }));
   }
+
+  // 6.4 Define methods and return types clearly
+  async findByUserId(userId: number) {
+    return this.bookings.filter(b => b.id === userId);
+  }
 }
 
 

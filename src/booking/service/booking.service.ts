@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { BookingRepository, Booking } from '../repository/booking.repository';
 import { BookingDto } from '../dto/booking.dto';
+import { BookingSummary } from '../dto/booking-summary.dto';
 
 @Injectable()
 export class BookingService {
@@ -30,4 +31,19 @@ export class BookingService {
     seatNumber: e.seatNumber,
   }));
 }
+
+/**
+  * 6.4. Define methods and return types clearly
+  * Clear method: get booking summary for a user.
+  * Returns Promise<BookingSummary[]>, not raw entity.
+*/
+  async getBookingsForUser(userId: number): Promise<BookingSummary[]> {
+    const entities = await this.bookingRepo.findByUserId(userId);
+
+    // 6.3 — Filter out internal state + 6.4 — Return specific type
+    return entities.map(e => ({
+      date: e.date,
+      seatNumber: e.seatNumber,
+    }));
+  }
 }

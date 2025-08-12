@@ -22,4 +22,10 @@ export class BookingController {
   async getBookings(): Promise<BookingDto[]> {
   return this.bookingService.findAll();
   }
+ 
+  // 6.4. Define methods and return types clearly
+   @Get('user/:id')
+  getBookingsForUser(@Param('id') id: string) {
+    return this.bookingService.getBookingsForUser(Number(id));
+  }
 }

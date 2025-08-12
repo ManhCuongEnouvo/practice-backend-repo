@@ -119,3 +119,51 @@ cart.addItem("Apple");
 const items = cart.getItems();
 // items.push("Banana"); ❌ Lỗi compile-time (readonly)
 console.log(items); // ["Apple"]
+
+#### 6.4. Define specific methods and return types for the queries you want to make
+ Instead of writing a method that returns the entire internal state of an object, define specific methods that return only the information you need, and with explicit return types.
+This helps:
+- Reduce the risk of internal encapsulation.
+- Keep the class less dependent on its internal structure.
+- Makes the code easier to read and maintain.
+
+```TS
+class BankAccount {
+  private balance: number;
+
+  constructor(balance: number) {
+    this.balance = balance;
+  }
+
+  // ❌ Expose toàn bộ state
+  public getState(): { balance: number } {
+    return { balance: this.balance };
+  }
+}
+
+// Client code
+const account = new BankAccount(1000);
+console.log(account.getState().balance); // Phụ thuộc vào cấu trúc trả về
+```
+
+```ts
+class BankAccount {
+  private balance: number;
+
+  constructor(balance: number) {
+    this.balance = balance;
+  }
+
+  // ✅ Chỉ định nghĩa method query cần thiết
+  public getBalance(): number {
+    return this.balance;
+  }
+}
+
+// Client code
+const account = new BankAccount(1000);
+console.log(account.getBalance()); // 1000
+```
+- When you don't want client code to depend on internal data structures.
+- When you want to optimize the ability to change without breaking external code.
+- When you want a clearer class API: return only what is needed.
