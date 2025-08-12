@@ -212,3 +212,126 @@ try {
   }
 }
 ```
+#### 7.5. Use queries to collect information and commands to take the next step
+- Query method: Returns data, does not cause side effects (does not change state).
+- Command method: Performs action, can change state or create side effects.
+Rules:
+- From query → do not call command inside
+	→ Ensure query is still "pure" (pure function) and does not cause data changes when only want to read.
+- From command → can call query inside
+	→ Because when performing action, getting more information for processing is normal.
+```TS
+// Query method — lẽ ra chỉ đọc dữ liệu
+function getUserById(userId: number): User | null {
+  const user = database.find(u => u.id === userId);
+
+  // ❌ Sai: Query mà lại update log (side effect)
+  logUserAccess(userId);
+
+  return user || null;
+}
+
+function logUserAccess(userId: number) {
+  console.log(`User ${userId} was accessed at ${new Date()}`);
+}
+```
+
+```ts
+class UserRepository {
+  getUserById(userId: number): User | null {
+    return database.find(u => u.id === userId) || null;
+  }
+}
+
+class UserService {
+  constructor(private repo: UserRepository) {}
+
+  changeUserPassword(userId: number, newPassword: string): void {
+    const user = this.repo.getUserById(userId); // ✅ Query được gọi trong command
+    if (!user) throw new Error("User not found");
+
+    user.password = newPassword; // side effect
+    console.log(`Password updated for user ${user.id}`);
+  }
+}
+
+// Sử dụng
+const service = new UserService(new UserRepository());
+service.changeUserPassword(1, "newPass123");
+```
+#### 7.6. Define abstractions for commands that cross system boundaries
+- When the command method goes beyond the system boundary → always create an abstraction (interface).
+- Only work with abstraction, do not directly call external system code.
+- Make the code easy to test, easy to maintain, easy to change the implementation.
+```TS
+// 1. Định nghĩa abstraction (interface)
+interface EmailSender {
+  sendEmail(to: string, subject: string, body: string): Promise<void>;
+}
+
+// 2. Implementation thật (gửi email qua service ngoài)
+class SmtpEmailSender implements EmailSender {
+  async sendEmail(to: string, subject: string, body: string): Promise<void> {
+    console.log(`Sending email to ${to} via SMTP...`);
+    // Code gọi SMTP server thật
+  }
+}
+
+// 3. Command method sử dụng abstraction
+class UserService {
+  constructor(private emailSender: EmailSender) {}
+
+  async registerUser(email: string) {
+    // Logic đăng ký user
+    await this.emailSender.sendEmail(email, "Welcome!", "Thanks for signing up!");
+  }
+}
+
+// 4. Trong runtime, truyền vào implementation thật
+const emailSender = new SmtpEmailSender();
+const userService = new UserService(emailSender);
+userService.registerUser("test@example.com");
+
+// 5. Trong unit test, dùng mock/stub
+class FakeEmailSender implements EmailSender {
+  async sendEmail(to: string, subject: string, body: string) {
+    console.log(`(FAKE) Email to ${to}: ${subject}`);
+  }
+}
+```
+
+#### 7.7. Only verify calls to command methods with a mock
+Query method → Do not mock, do not verify the number of calls.
+Command method calls Command method → Can be mocked to:
+- Ensure it is called at least once.
+- Avoid calling multiple times (repeated side effects).
+    
+```TS
+class EmailService {
+  sendEmail(to: string, message: string): void {
+    console.log(`Sending email to ${to}: ${message}`);
+  }
+}
+
+class UserNotifier {
+  constructor(private emailService: EmailService) {}
+
+  notifyUser(userEmail: string): void {
+    // Command method
+    this.emailService.sendEmail(userEmail, "Welcome!");
+  }
+}
+
+// --- Unit test ---
+test("should send email exactly once", () => {
+  const emailService = new EmailService();
+  const sendEmailMock = jest.spyOn(emailService, "sendEmail").mockImplementation(() => {});
+
+  const notifier = new UserNotifier(emailService);
+  notifier.notifyUser("test@example.com");
+
+  // Verify command method call
+  expect(sendEmailMock).toHaveBeenCalledTimes(1);
+  expect(sendEmailMock).toHaveBeenCalledWith("test@example.com", "Welcome!");
+});
+```
