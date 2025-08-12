@@ -90,3 +90,46 @@ const order = repo.getById(1);
 order.receiveProduct(new Date());
 
 ```
+#### 8.3. Create read models directly from their data source
+Instead of loading a write model (which can change data) from the DB and then converting it to a read model, we should create a read model directly from the data source (e.g. SQL query or API) to:
+- Avoid client access to the write model.
+- Reduce overhead because there is no need to load all unnecessary data.
+- Optimize performance because only query the correct fields to read.
+```ts
+/// BAD
+// Controller
+const purchaseOrders = purchaseOrderRepository.getAll(); // Lấy write model
+const reportItems = purchaseOrders.map(po => po.forStockReport()); // Convert sang read model
+```
+
+```TS
+// Read model: chỉ chứa dữ liệu cần cho báo cáo tồn kho
+class PurchaseOrderForStockReport {
+  constructor(
+    public productId: number,
+    public quantity: number,
+    public receivedDate?: Date
+  ) {}
+}
+
+// Repository chỉ trả về read model, không đụng tới write model
+class PurchaseOrderReadRepository {
+  constructor(private db: any) {}
+
+  async getForStockReport(): Promise<PurchaseOrderForStockReport[]> {
+    const rows = await this.db.query(`
+      SELECT product_id, quantity, received_date
+      FROM purchase_orders
+      WHERE received_date IS NOT NULL
+    `);
+    return rows.map(
+      (row: any) =>
+        new PurchaseOrderForStockReport(row.product_id, row.quantity, row.received_date)
+    );
+  }
+}
+
+// Controller: chỉ nhận read model
+const readRepo = new PurchaseOrderReadRepository(db);
+const stockReportItems = await readRepo.getForStockReport();
+```
