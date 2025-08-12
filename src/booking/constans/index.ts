@@ -1,0 +1,1 @@
+export const BOOKING_TIMEOUT = 'BOOKING_TIMEOUT';

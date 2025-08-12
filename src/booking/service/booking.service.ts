@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
 import { BookingRepository, Booking } from '../repository/booking.repository';
 import { BookingDto } from '../dto/booking.dto';
 import { BookingSummary } from '../dto/booking-summary.dto';
@@ -6,6 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BookingReportReadModel } from '../dto/booking-report.dto';
 import { BookingCreatedEvent } from '../events/booking.event';
 import { EventBus } from '@nestjs/cqrs';
+import { BOOKING_TIMEOUT } from '../constans';
 
 @Injectable()
 export class BookingService {
@@ -13,6 +14,7 @@ export class BookingService {
     private readonly bookingRepo: BookingRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly eventBus: EventBus,
+    @Inject(BOOKING_TIMEOUT) private readonly timeoutMs: number
   ) {}
 
   // Query: lấy tất cả booking
@@ -116,6 +118,7 @@ export class BookingService {
   }
 
   async createBookingV2(customerName: string, date: string, seatNumber: string, price: number) {
+    console.log('Timeout is:', this.timeoutMs);
     const booking = {
       id: Date.now(),
       customerName,
