@@ -8,6 +8,7 @@ export interface Booking {
   customerName: string;
   date: string;
   seatNumber: string;
+  price?: number
 }
 
 @Injectable()

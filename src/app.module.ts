@@ -5,9 +5,10 @@ import { BookingModule } from './booking/booking.module';
 import { BookingController } from './booking/controller/booking.controller';
 import { BookingService } from './booking/service/booking.service';
 import { BookingRepository } from './booking/repository/booking.repository';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
-  imports: [BookingModule],
+  imports: [BookingModule, CqrsModule],
   controllers: [AppController, BookingController ],
   providers: [AppService, BookingService, BookingRepository],
 })

@@ -4,12 +4,15 @@ import { BookingDto } from '../dto/booking.dto';
 import { BookingSummary } from '../dto/booking-summary.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BookingReportReadModel } from '../dto/booking-report.dto';
+import { BookingCreatedEvent } from '../events/booking.event';
+import { EventBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class BookingService {
   constructor(
     private readonly bookingRepo: BookingRepository,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly eventBus: EventBus,
   ) {}
 
   // Query: lấy tất cả booking
@@ -110,5 +113,26 @@ export class BookingService {
     // QUERY: report by date
   async getReportByDate(date: string): Promise<BookingReportReadModel> {
     return this.bookingRepo.getReportByDate(date);
+  }
+
+  async createBookingV2(customerName: string, date: string, seatNumber: string, price: number) {
+    const booking = {
+      id: Date.now(),
+      customerName,
+      date,
+      seatNumber,
+      price,
+    };
+
+    const saved = await this.bookingRepo.save(booking);
+    this.eventBus.publish(new BookingCreatedEvent(
+      saved.id,
+      saved.customerName,
+      saved.date,
+      saved.seatNumber,
+      saved.price ?? 0,
+    ));
+
+    return saved;
   }
 }

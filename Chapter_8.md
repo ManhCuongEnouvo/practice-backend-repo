@@ -133,3 +133,105 @@ class PurchaseOrderReadRepository {
 const readRepo = new PurchaseOrderReadRepository(db);
 const stockReportItems = await readRepo.getForStockReport();
 ```
+#### 8.4. Build read models from domain events
+Instead of querying data directly from the current database, we build a read model by listening to domain events (events from the system) and updating a table/collection specifically for reading.
+This method is often used in Event Sourcing or CQRS:
+- Write side: Save events (domain events) when there are changes.
+- Read side: Listen to those events to build or update the read model, helping query faster.
+```TS
+// DOMAIN EVENT
+// Sự kiện khi đơn hàng được tạo
+class OrderCreated {
+  constructor(
+    public orderId: string,
+    public customerName: string,
+    public totalAmount: number
+  ) {}
+}
+
+// Sự kiện khi đơn hàng được giao
+class OrderShipped {
+  constructor(public orderId: string, public shippedDate: Date) {}
+}
+```
+
+```ts
+// Event bus (to publish & subscribe events)
+type EventHandler<T> = (event: T) => void;
+
+class EventBus {
+  private handlers: { [eventName: string]: EventHandler<any>[] } = {};
+
+  subscribe<T>(eventName: string, handler: EventHandler<T>) {
+    if (!this.handlers[eventName]) {
+      this.handlers[eventName] = [];
+    }
+    this.handlers[eventName].push(handler);
+  }
+
+  publish<T>(event: T) {
+    const eventName = event.constructor.name;
+    this.handlers[eventName]?.forEach(handler => handler(event));
+  }
+}
+
+const eventBus = new EventBus();
+```
+
+```TS
+// READ MODEL
+// Chỉ lưu thông tin cần thiết cho việc hiển thị
+interface OrderSummary {
+  orderId: string;
+  customerName: string;
+  totalAmount: number;
+  shippedDate?: Date;
+}
+
+const orderSummaries: OrderSummary[] = [];
+
+// Lắng nghe sự kiện để cập nhật read model
+eventBus.subscribe<OrderCreated>("OrderCreated", (event) => {
+  orderSummaries.push({
+    orderId: event.orderId,
+    customerName: event.customerName,
+    totalAmount: event.totalAmount
+  });
+});
+
+eventBus.subscribe<OrderShipped>("OrderShipped", (event) => {
+  const order = orderSummaries.find(o => o.orderId === event.orderId);
+  if (order) {
+    order.shippedDate = event.shippedDate;
+  }
+});
+```
+
+```ts
+// Domain code tạo đơn hàng
+function createOrder(orderId: string, customer: string, amount: number) {
+  const event = new OrderCreated(orderId, customer, amount);
+  eventBus.publish(event);
+}
+
+function shipOrder(orderId: string) {
+  const event = new OrderShipped(orderId, new Date());
+  eventBus.publish(event);
+}
+
+// Chạy thử
+createOrder("ORD001", "Nguyễn Văn A", 500000);
+shipOrder("ORD001");
+
+console.log(orderSummaries);
+/*
+[
+  {
+    orderId: 'ORD001',
+    customerName: 'Nguyễn Văn A',
+    totalAmount: 500000,
+    shippedDate: 2025-08-11T08:23:00.000Z
+  }
+]
+*/
+```
