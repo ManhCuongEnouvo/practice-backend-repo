@@ -100,3 +100,67 @@ dispatcher.on<UserPasswordChanged>(
 const userService = new UserService(dispatcher);
 userService.changeUserPassword("user123", "newSecret");
 ```
+
+#### 7.3.Make services immutable from the outside as well as on the inside
+- Services must be immutable: both from the outside (configuration, dependencies) and from the inside (state affects behavior).
+- Each time a method is called → the behavior must be the same if the input is the same.
+- Avoid storing state in the service → move that logic elsewhere.
+```TS
+// BAD
+class EmailAddress {
+  constructor(public value: string) {}
+}
+
+class Mailer {
+  private sentTo: EmailAddress[] = []; // Lưu state bên trong
+
+  sendConfirmationEmail(recipient: EmailAddress): void {
+    if (this.sentTo.some(r => r.value === recipient.value)) {
+      console.log(`⏩ Already sent to ${recipient.value}`);
+      return;
+    }
+    console.log(`📧 Sending email to ${recipient.value}`);
+    this.sentTo.push(recipient); // Thay đổi state
+  }
+}
+
+// Sử dụng
+const mailer = new Mailer();
+const recipient = new EmailAddress("info@example.com");
+
+mailer.sendConfirmationEmail(recipient); // Gửi
+mailer.sendConfirmationEmail(recipient); // Không gửi (do lưu state)
+```
+
+```ts
+class Recipients {
+  constructor(private emails: EmailAddress[]) {}
+
+  deduplicated(): EmailAddress[] {
+    const seen = new Set<string>();
+    return this.emails.filter(email => {
+      if (seen.has(email.value)) return false;
+      seen.add(email.value);
+      return true;
+    });
+  }
+}
+
+class StatelessMailer {
+  sendConfirmationEmails(recipients: EmailAddress[]): void {
+    for (const recipient of recipients) {
+      console.log(`📧 Sending email to ${recipient.value}`);
+    }
+  }
+}
+
+// Sử dụng
+const recipients = new Recipients([
+  new EmailAddress("info@example.com"),
+  new EmailAddress("info@example.com"), // trùng
+  new EmailAddress("user@example.com")
+]);
+
+const mailer2 = new StatelessMailer();
+mailer2.sendConfirmationEmails(recipients.deduplicated());
+```
